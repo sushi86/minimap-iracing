@@ -1,0 +1,79 @@
+<script>
+    window.onload = function() {
+        var driverData = {
+        "-": 0.1
+        }
+        
+        var options = {
+            scaling : 100,
+            pathColor : '#FFFFFF',
+            pathStrokeWidth : 3,
+            maxPrediction : 10000,
+            nodeSize : 2,
+            nodeStrokeWidth : 1,
+            nodeStrokeColor: "red",
+            labelFont : "Arial",
+            labelFontSize : "4px",
+            labelColor : 'red'
+        };
+        var track1 = new RivalTracker("track1","nos", driverData, options);
+        track1.setNodeColor('-','red');
+
+        var svg = document.getElementsByTagName("svg")[0];
+        var viewBox = svg.viewBox.baseVal;
+        var gearDiv = document.getElementById("gear");
+
+        window.onresize = function() {
+            console.log("resize");
+        }
+
+        viewBox.width = viewBox.width / 2;
+        viewBox.height = viewBox.height / 2;
+
+        /*
+        viewBox.x = 50;
+        viewBox.y = 150;
+        
+        */
+
+        var gears = [
+            {start: 1, end: 4, gear: 2},
+            {start: 5, end: 6, gear: 5},
+            {start: 8, end: 10, gear: 4},
+        ];
+
+        function getGear(percent) {
+            var gear = gears.find(g => percent >= g.start && percent <= g.end);
+            if (typeof gear == 'undefined') return null;
+            return gear.gear;
+        }
+
+        setInterval(updatePos, 50);
+
+        function updatePos() {
+            if (driverData["-"] > 100) driverData["-"] = 0;
+            driverData["-"] += 0.01;
+
+            var percent = driverData["-"];
+            var gear = getGear(percent);
+            gearDiv.innerHTML = gear;
+
+            var point = track1.getDriverPosition(percent);
+            
+            viewBox.x = point.x - viewBox.width / 2;
+            viewBox.y = point.y - viewBox.height / 3;
+
+            var angle = -90 - track1.getAngle(percent);
+            svg.setAttribute('transform','rotate('+ angle +')');
+            
+            track1.updatePositions();
+        };
+    };
+</script>
+<div id="wrapper">
+    <div id="track1">
+    </div>
+    <div id="gear">
+        
+    </div>
+</div>
