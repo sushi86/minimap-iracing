@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { interval } from 'rxjs';
+import { IracingService } from '../../services/iracing.service';
 declare const RivalTracker: any;
 
 @Component({
@@ -14,19 +15,43 @@ export class MapComponent implements OnInit {
   viewBox: any;
   svg: any;
 
-  constructor() {
-    this.driverData = {"-" : 0.1}
+  percent: number = 0;
+
+  constructor(
+    private iRacing: IracingService
+  ) {
+    this.driverData = {"-" : 0.1};
+
+    this.iRacing.driveEvent.subscribe(
+      data => {
+        var percent = parseFloat(data);
+        if (isNaN(percent)) {
+          this.percent = 0;
+        } else {
+          //var p = percent * 100 - 1.81;
+          //if (p < 0) p = 100 - p;
+          
+          this.percent = percent * 100;
+        }
+        console.log("percent:", this.percent);
+      }
+    );
   }
 
   ngOnInit(): void {
     this.start();
   }
 
-  start() {    
+  start() {
+
+    this.iRacing.start();
+
+    this.iRacing.connect();
+
     var options = {
         scaling : 100,
         pathColor : '#FFFFFF',
-        pathStrokeWidth : 3,
+        pathStrokeWidth : 1,
         maxPrediction : 10000,
         nodeSize : 2,
         nodeStrokeWidth : 1,
@@ -43,8 +68,8 @@ export class MapComponent implements OnInit {
     this.viewBox = this.svg.viewBox.baseVal;
     //var gearDiv = document.getElementById("gear");
 
-    this.viewBox.width = this.viewBox.width / 2;
-    this.viewBox.height = this.viewBox.height / 2;
+    this.viewBox.width = this.viewBox.width / 6;
+    this.viewBox.height = this.viewBox.height / 6;
 
     var gears = [
       {start: 1, end: 4, gear: 2},
@@ -59,24 +84,20 @@ export class MapComponent implements OnInit {
   }
 
   updatePos() {
-    debugger;
-    console.log(typeof this.driverData);
-    if (typeof this.driverData == 'undefined') return;
-
     if (this.driverData["-"] > 100) this.driverData["-"] = 0;
     
-    this.driverData["-"] += 0.01;
+    this.driverData["-"] = this.percent;
 
-    var percent = this.driverData["-"];
+    //var percent = this.driverData["-"];
     //var gear = getGear(percent);
     //this.gearDiv.innerHTML = gear;
 
-    var point = this.track1.getDriverPosition(percent);
+    var point = this.track1.getDriverPosition(this.percent);
     
     this.viewBox.x = point.x - this.viewBox.width / 2;
     this.viewBox.y = point.y - this.viewBox.height / 3;
 
-    var angle = -90 - this.track1.getAngle(percent);
+    var angle = -90 - this.track1.getAngle(this.percent);
     this.svg.setAttribute('transform','rotate('+ angle +')');
     
     this.track1.updatePositions();
